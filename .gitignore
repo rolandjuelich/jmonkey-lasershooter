@@ -1,0 +1,12 @@
+/target
+/bin
+/build
+.settings
+.classpath
+.project
+*.factorypath
+
+*.dylib
+*.blend1
+
+**/.DS_Store
