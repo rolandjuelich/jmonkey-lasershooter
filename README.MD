@@ -17,22 +17,27 @@ A small lasershooter game as playground to explore possibilities of 3D in Java w
 ### Textures
 * see http://texturelib.com
 
-#### Explosion Images
+#### Explosion Sprites
 * created by /sinestesiastudio (facebook) or /sinestesiaguy/ (Instagram)
-* https://opengameart.org/content/2d-explosion-animations-frame-by-frame
+* obtained from https://opengameart.org/content/2d-explosion-animations-frame-by-frame
+
+#### Destruction Sprites
+* asteroid Destruction sprite by https://www.behance.net/ashishlko11
+* obtained from https://opengameart.org/content/explosion-4
 
 #### Planet Sprites
 * created by Viktor.Hahn@web.de
-* https://opengameart.org/content/16-planet-sprites
+** obtained from https://opengameart.org/content/16-planet-sprites
 
 ### Sounds
 #### Laser
 * created with https://www.bfxr.net
 
 #### Explosion
-* https://www.freesoundeffects.com/free-sounds/explosion-10070/
+* obtained from https://www.freesoundeffects.com/free-sounds/explosion-10070/
 
-
+#### Destruction
+* obtained from https://opengameart.org/content/rockbreaking
 
 ## Further Documentation
 
