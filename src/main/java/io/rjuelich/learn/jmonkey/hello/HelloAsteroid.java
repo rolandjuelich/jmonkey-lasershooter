@@ -12,18 +12,18 @@ import com.jme3.scene.Spatial;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
 
+import io.rjuelich.learn.jmonkey.asteroid.Asteroid;
+
 public class HelloAsteroid extends SimpleApplication {
 
 	private static final String ACTION_FIRE = "fire";
-	private Spatial asteroid;
 
 	public static void main(final String[] args) {
 		new HelloAsteroid().start();
 	}
 
 	private boolean alreadyPressed = false;
-	private Beams beams = new Beams();
-	private Target target;
+	private Asteroid asteroid;
 
 	@Override
 	public void simpleInitApp() {
@@ -34,9 +34,8 @@ public class HelloAsteroid extends SimpleApplication {
 
 		getRootNode().addLight(new DirectionalLight(new Vector3f(-1, -1, -.5f)));
 
-		asteroid = getAssetManager().loadModel("Models/asteroid.blend");
-		target = new Target(getAssetManager(), getRootNode(), asteroid);
-
+		asteroid = new Asteroid(getAssetManager(), getRootNode());
+		
 		getInputManager().addMapping(ACTION_FIRE, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
 		getInputManager().addListener(registerPressedButton, ACTION_FIRE);
 		getInputManager().addListener(fireLaser, ACTION_FIRE);
@@ -48,19 +47,12 @@ public class HelloAsteroid extends SimpleApplication {
 
 	}
 
-	@Override
-	public void simpleUpdate(final float tpf) {
-		beams.update();
-		
-		asteroid.rotate(0, .001f, 0);
-	}
-
 	private final ActionListener fireLaser = new ActionListener() {
 
 		@Override
 		public void onAction(final String name, final boolean isPressed, final float tpf) {
 			if (isPressed && !alreadyPressed) {
-				beams.add(new Beam(getAssetManager(), getRootNode(), getCamera(), target));
+				new Beam(getAssetManager(), getRootNode(), getCamera(), asteroid);
 			}
 
 		}
