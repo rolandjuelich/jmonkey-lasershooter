@@ -6,7 +6,7 @@ A small lasershooter game as playground to explore possibilities of 3D in Java w
 * filters / post processors for glow effects
 * particle emitters for animated explosion effect
 * audio nodes for laser beam and explosions
-* simple collision detection (no bulletphysics yet)
+* collission detection with bulletphysics
 
 
 ![](img/preview.png)

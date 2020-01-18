@@ -1,10 +1,12 @@
 package io.rjuelich.learn.jmonkey.hello;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.bullet.BulletAppState;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.DirectionalLight;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.post.filters.BloomFilter;
@@ -23,10 +25,14 @@ public class HelloAsteroid extends SimpleApplication {
 	}
 
 	private boolean alreadyPressed = false;
-	private Asteroid asteroid;
+	private BulletAppState bulletAppState;
 
 	@Override
 	public void simpleInitApp() {
+		bulletAppState = new BulletAppState();
+		bulletAppState.setDebugEnabled(true);
+		stateManager.attach(bulletAppState);
+
 		final Texture stars = getAssetManager().loadTexture("Scenes/starfield.png");
 		final Texture planet = getAssetManager().loadTexture("Scenes/starfield-red-planet.png");
 		final Spatial skybox = SkyFactory.createSky(getAssetManager(), stars, stars, stars, planet, stars, stars);
@@ -34,8 +40,8 @@ public class HelloAsteroid extends SimpleApplication {
 
 		getRootNode().addLight(new DirectionalLight(new Vector3f(-1, -1, -.5f)));
 
-		asteroid = new Asteroid(getAssetManager(), getRootNode());
-		
+		new Asteroid(getAssetManager(), getRootNode(), bulletAppState.getPhysicsSpace());
+
 		getInputManager().addMapping(ACTION_FIRE, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
 		getInputManager().addListener(registerPressedButton, ACTION_FIRE);
 		getInputManager().addListener(fireLaser, ACTION_FIRE);
@@ -52,7 +58,10 @@ public class HelloAsteroid extends SimpleApplication {
 		@Override
 		public void onAction(final String name, final boolean isPressed, final float tpf) {
 			if (isPressed && !alreadyPressed) {
-				new Beam(getAssetManager(), getRootNode(), getCamera(), asteroid);
+				final Vector3f location = getCamera().getLocation().add(0,1,0);
+				final Quaternion rotation = getCamera().getRotation();
+				final Vector3f direction = getCamera().getDirection();
+				new Beam(getAssetManager(), getRootNode(), location, rotation, direction, bulletAppState.getPhysicsSpace());
 			}
 
 		}
