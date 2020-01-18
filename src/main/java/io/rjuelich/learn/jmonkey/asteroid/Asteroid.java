@@ -15,10 +15,15 @@ import com.jme3.effect.ParticleMesh;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
+import com.jme3.scene.SceneGraphVisitorAdapter;
 import com.jme3.scene.Spatial;
+import com.jme3.scene.control.LodControl;
 import com.jme3.scene.control.UpdateControl;
 import com.jme3.texture.Texture;
+
+import jme3tools.optimize.LodGenerator;
 
 public class Asteroid {
 
@@ -34,6 +39,14 @@ public class Asteroid {
 		this.physicsSpace = physicsSpace;
 		this.model = assetManager.loadModel("Models/asteroid.blend");
 		this.model.addControl(rotation);
+		this.model.depthFirstTraversal(new SceneGraphVisitorAdapter() {
+			@Override
+			public void visit(Geometry geom) {
+				LodGenerator lodGenerator = new LodGenerator(geom);
+				lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, .25f, .5f, .75f);
+				geom.addControl(new LodControl());
+			}
+		});
 
 		physicsControl = new RigidBodyControl(CollisionShapeFactory.createDynamicMeshShape(model), 0);
 		this.model.addControl(physicsControl);
@@ -57,6 +70,7 @@ public class Asteroid {
 				}
 			}
 		});
+
 	}
 
 	private void explode(final Vector3f location) {
