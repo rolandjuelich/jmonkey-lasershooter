@@ -8,7 +8,7 @@ import com.jme3.audio.AudioNode;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.collision.PhysicsCollisionEvent;
 import com.jme3.bullet.collision.PhysicsCollisionListener;
-import com.jme3.bullet.control.RigidBodyControl;
+import com.jme3.bullet.control.GhostControl;
 import com.jme3.bullet.util.CollisionShapeFactory;
 import com.jme3.effect.ParticleEmitter;
 import com.jme3.effect.ParticleMesh;
@@ -48,7 +48,7 @@ public class Asteroid {
 			}
 		});
 
-		physicsControl = new RigidBodyControl(CollisionShapeFactory.createDynamicMeshShape(model), 0);
+		physicsControl = new GhostControl(CollisionShapeFactory.createDynamicMeshShape(model));
 		this.model.addControl(physicsControl);
 		this.physicsSpace.add(physicsControl);
 
@@ -64,12 +64,13 @@ public class Asteroid {
 			@Override
 			public void collision(PhysicsCollisionEvent event) {
 				if (hitCount < MAX_HIT_COUNT) {
-					sufferDamage(event.getLocalPointA());
+					sufferDamage(event.getNodeB().getWorldTranslation());
 				} else {
-					explode(event.getLocalPointA());
+					explode(event.getNodeB().getWorldTranslation());
 				}
 			}
 		});
+		
 
 	}
 
@@ -94,7 +95,6 @@ public class Asteroid {
 				if (emitter.getNumVisibleParticles() == 0) {
 					node.removeFromParent();
 				}
-				;
 			}
 		});
 	}
@@ -119,7 +119,7 @@ public class Asteroid {
 			model.rotate(0, .001f, 0);
 		}
 	};
-	private RigidBodyControl physicsControl;
+	private GhostControl physicsControl;
 
 	private ParticleEmitter createExplosionEmitter() {
 		final Texture texture = assetManager.loadTexture("Effects/Explosions/sinestasiastudio/explosion 2.png");

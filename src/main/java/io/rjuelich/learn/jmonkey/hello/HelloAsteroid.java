@@ -30,7 +30,6 @@ public class HelloAsteroid extends SimpleApplication {
 	@Override
 	public void simpleInitApp() {
 		bulletAppState = new BulletAppState();
-		bulletAppState.setDebugEnabled(true);
 		stateManager.attach(bulletAppState);
 
 		final Texture stars = getAssetManager().loadTexture("Scenes/starfield.png");
