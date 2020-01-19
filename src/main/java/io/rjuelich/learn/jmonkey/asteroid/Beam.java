@@ -1,4 +1,4 @@
-package io.rjuelich.learn.jmonkey.hello;
+package io.rjuelich.learn.jmonkey.asteroid;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.audio.AudioData.DataType;
@@ -29,15 +29,16 @@ public class Beam {
 	private static final int TTL_MIN = 0;
 	private static final int TTL_MAX = 50;
 
-	private final Light light;
+	private int duration;
 	private final Vector3f direction;
 
-	private int duration;
 	private final Node rootNode;
-	private final GhostControl physicsControl;
 	private final PhysicsSpace physicsSpace;
-	private Spatial model;
+
+	private final Spatial model;
 	private final AudioNode sound;
+	private final Light light;
+	private final GhostControl physicsControl;
 
 	public Beam(final AssetManager assetManager, final Node rootNode, final Vector3f location,
 			final Quaternion rotation, final Vector3f direction, final PhysicsSpace physicsSpace) {
@@ -62,8 +63,16 @@ public class Beam {
 		this.physicsSpace.addCollisionListener(new PhysicsCollisionListener() {
 
 			@Override
-			public void collision(PhysicsCollisionEvent event) {
-				die();
+			public void collision(final PhysicsCollisionEvent event) {
+				terminate();
+			}
+		});
+		this.sound.addControl(new UpdateControl() {
+			@Override
+			public void update(final float tpf) {
+				if (duration == TTL_MIN + 1) {
+					sound.playInstance();
+				}
 			}
 		});
 	}
@@ -78,7 +87,7 @@ public class Beam {
 			move();
 
 			if (duration == TTL_MAX) {
-				die();
+				terminate();
 			}
 		}
 
@@ -88,39 +97,30 @@ public class Beam {
 		model.move(direction);
 	}
 
-	public void die() {
+	public void terminate() {
 		rootNode.removeLight(light);
 		rootNode.detachChild(model);
 		rootNode.detachChild(sound);
 		physicsSpace.remove(physicsControl);
 	}
 
-	private Light createLight(final Node rootNode) {
+	private static Light createLight(final Node rootNode) {
 		final PointLight light = new PointLight();
 		light.setColor(ColorRGBA.Red);
 		light.setRadius(3);
 		return light;
 	}
 
-	private AudioNode createSound(final AssetManager assetManager) {
+	private static AudioNode createSound(final AssetManager assetManager) {
 		final AudioNode sound = new AudioNode(assetManager, "Sound/Effects/lasergun.wav", DataType.Buffer);
 		sound.setPositional(false);
 		sound.setLooping(false);
 		sound.setVolume(.2f);
-		sound.addControl(new UpdateControl() {
-			@Override
-			public void update(final float tpf) {
-				if (duration == TTL_MIN + 1) {
-					sound.playInstance();
-				}
-			}
-		});
-
 		return sound;
 	}
 
-	private Spatial createModel(final AssetManager assetManager, final Vector3f location, final Quaternion rotation,
-			final GhostControl physicsControl) {
+	private static Spatial createModel(final AssetManager assetManager, final Vector3f location,
+			final Quaternion rotation, final GhostControl physicsControl) {
 		final Spatial model = assetManager.loadModel("Models/beam.blend");
 		model.depthFirstTraversal(new SceneGraphVisitorAdapter() {
 			@Override

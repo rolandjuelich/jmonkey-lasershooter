@@ -1,19 +1,12 @@
 package io.rjuelich.learn.jmonkey.asteroid;
 
-import static com.jme3.math.Vector3f.ZERO;
+import static com.jme3.bullet.util.CollisionShapeFactory.createDynamicMeshShape;
 
 import com.jme3.asset.AssetManager;
-import com.jme3.audio.AudioData.DataType;
-import com.jme3.audio.AudioNode;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.collision.PhysicsCollisionEvent;
 import com.jme3.bullet.collision.PhysicsCollisionListener;
 import com.jme3.bullet.control.GhostControl;
-import com.jme3.bullet.util.CollisionShapeFactory;
-import com.jme3.effect.ParticleEmitter;
-import com.jme3.effect.ParticleMesh;
-import com.jme3.material.Material;
-import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -21,165 +14,91 @@ import com.jme3.scene.SceneGraphVisitorAdapter;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.control.LodControl;
 import com.jme3.scene.control.UpdateControl;
-import com.jme3.texture.Texture;
 
 import jme3tools.optimize.LodGenerator;
 
 public class Asteroid {
 
-	private static final int MAX_HIT_COUNT = 30;
-	private final AssetManager assetManager;
-	private final Node node;
-	private final Spatial model;
-	private PhysicsSpace physicsSpace;
+	public static final int MAX_HIT_COUNT = 30;
+
 	private int hitCount = 0;
 
-	public Asteroid(final AssetManager assetManager, final Node rootNode, PhysicsSpace physicsSpace) {
-		this.assetManager = assetManager;
-		this.physicsSpace = physicsSpace;
+	private final AssetManager assets;
+	private final Node root;
+
+	private final Spatial model;
+	private final PhysicsSpace physics;
+	private final GhostControl physicsControl;
+
+	public Asteroid(final AssetManager assetManager, final Node rootNode, final PhysicsSpace physicsSpace) {
+		this.assets = assetManager;
+		this.root = rootNode;
+		this.physics = physicsSpace;
+
 		this.model = assetManager.loadModel("Models/asteroid.blend");
-		this.model.addControl(rotation);
+		this.model.setName("asteroid");
 		this.model.depthFirstTraversal(new SceneGraphVisitorAdapter() {
 			@Override
-			public void visit(Geometry geom) {
-				LodGenerator lodGenerator = new LodGenerator(geom);
+			public void visit(final Geometry geom) {
+				final LodGenerator lodGenerator = new LodGenerator(geom);
 				lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, .25f, .5f, .75f);
 				geom.addControl(new LodControl());
 			}
 		});
 
-		physicsControl = new GhostControl(CollisionShapeFactory.createDynamicMeshShape(model));
+		this.physicsControl = new GhostControl(createDynamicMeshShape(model));
+
+		this.model.addControl(rotationControl);
 		this.model.addControl(physicsControl);
-		this.physicsSpace.add(physicsControl);
 
-		this.node = new Node();
-		this.node.attachChild(model);
-		rootNode.attachChild(model);
-		rootNode.attachChild(this.node);
+		this.physics.add(physicsControl);
+		this.physics.addCollisionListener(collissionHandler);
 
-		this.model.setName("asteroid");
+		this.root.attachChild(model);
 
-		this.physicsSpace.addCollisionListener(new PhysicsCollisionListener() {
-
-			@Override
-			public void collision(PhysicsCollisionEvent event) {
-				if (hitCount < MAX_HIT_COUNT) {
-					sufferDamage(event.getNodeB().getWorldTranslation());
-				} else {
-					explode(event.getNodeB().getWorldTranslation());
-				}
-			}
-		});
-		
-
+		// preload to improve performance => nothing will be attached to rootNode
+		new Explosion(assetManager, rootNode);
+		new ExplosionBlast(assetManager, rootNode);
 	}
 
-	private void explode(final Vector3f location) {
-		model.removeFromParent();
-		physicsSpace.remove(physicsControl);
-
-		final AudioNode sound = createDestructionSound();
-		node.attachChild(sound);
-		sound.setLocalTranslation(location);
-		sound.play();
-
-		final ParticleEmitter emitter = createDestructionEmitter();
-		node.attachChild(emitter);
-		emitter.setLocalTranslation(location);
-		emitter.emitAllParticles();
-
-		emitter.addControl(new UpdateControl() {
-
-			@Override
-			public void update(float tpf) {
-				if (emitter.getNumVisibleParticles() == 0) {
-					node.removeFromParent();
-				}
-			}
-		});
-	}
-
-	private void sufferDamage(final Vector3f location) {
-		hitCount++;
-
-		final AudioNode sound = createExplosionSound();
-		node.attachChild(sound);
-		sound.setLocalTranslation(location);
-		sound.play();
-
-		final ParticleEmitter emitter = createExplosionEmitter();
-		node.attachChild(emitter);
-		emitter.setLocalTranslation(location);
-		emitter.emitAllParticles();
-	}
-
-	UpdateControl rotation = new UpdateControl() {
+	UpdateControl rotationControl = new UpdateControl() {
 		@Override
 		public void update(final float tpf) {
 			model.rotate(0, .001f, 0);
 		}
 	};
-	private GhostControl physicsControl;
 
-	private ParticleEmitter createExplosionEmitter() {
-		final Texture texture = assetManager.loadTexture("Effects/Explosions/sinestasiastudio/explosion 2.png");
-		final Material material = new Material(assetManager, "Common/MatDefs/Misc/Particle.j3md");
-		material.setTexture("Texture", texture);
+	PhysicsCollisionListener collissionHandler = new PhysicsCollisionListener() {
 
-		final ParticleEmitter emitter = new ParticleEmitter("Emitter", ParticleMesh.Type.Triangle, 30);
-		emitter.setMaterial(material);
-		emitter.setNumParticles(4);
-		emitter.setParticlesPerSec(0);
-		emitter.setImagesX(8);
-		emitter.setImagesY(8);
-		emitter.setEndColor(ColorRGBA.White);
-		emitter.setStartColor(ColorRGBA.White);
-		emitter.setStartSize(.1f);
-		emitter.setEndSize(.5f);
-		emitter.setRandomAngle(true);
+		@Override
+		public void collision(final PhysicsCollisionEvent event) {
+			if (hitCount < MAX_HIT_COUNT) {
+				sufferDamage(event.getNodeB().getWorldTranslation());
+			} else {
+				explode(event.getNodeB().getWorldTranslation());
+			}
+		}
+	};
 
-		emitter.setHighLife(.5f);
-		emitter.setLowLife(.05f);
+	public void explode(final Vector3f location) {
 
-		return emitter;
+		// physicsSpace.removeCollisionListener(collissionHandler);
+
+		// TODO figure out why "java.lang.IndexOutOfBoundsException"
+		// happens here when the listener gets removed
+
+		physics.remove(physicsControl);
+
+		root.detachChild(model);
+		root.removeControl(physicsControl);
+
+		new ExplosionBlast(assets, root).at(location);
+
 	}
 
-	private ParticleEmitter createDestructionEmitter() {
-		final Texture texture = assetManager.loadTexture("Effects/Explosions/ashishlko11/Explosion.png");
-		final Material material = new Material(assetManager, "Common/MatDefs/Misc/Particle.j3md");
-		material.setTexture("Texture", texture);
-
-		final ParticleEmitter emitter = new ParticleEmitter("AsteroidDestruction", ParticleMesh.Type.Triangle, 5);
-		emitter.setMaterial(material);
-		emitter.setParticlesPerSec(0);
-		emitter.setImagesX(4);
-		emitter.setImagesY(3);
-		emitter.setEndColor(ColorRGBA.White);
-		emitter.setStartColor(ColorRGBA.White);
-		emitter.setStartSize(.1f);
-		emitter.setEndSize(2.5f);
-		emitter.setRandomAngle(true);
-		emitter.setRotateSpeed(.1f);
-		emitter.setGravity(ZERO);
-		emitter.setHighLife(.1f);
-		emitter.setLowLife(1.5f);
-
-		return emitter;
-	}
-
-	private AudioNode createExplosionSound() {
-		final AudioNode sound = new AudioNode(assetManager, "Sound/Effects/explosion.wav", DataType.Buffer);
-		sound.setPositional(true);
-		sound.setLooping(false);
-		sound.setVolume(.05f);
-		return sound;
-	}
-
-	private AudioNode createDestructionSound() {
-		final AudioNode sound = new AudioNode(assetManager, "Sound/Effects/rock_breaking.ogg", DataType.Buffer);
-		sound.setPositional(true);
-		sound.setLooping(false);
-		return sound;
+	public void sufferDamage(final Vector3f location) {
+		hitCount++;
+		new Explosion(assets, root).at(location);
 	}
 
 }

@@ -1,4 +1,4 @@
-package io.rjuelich.learn.jmonkey.hello;
+package io.rjuelich.learn.jmonkey.asteroid;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.bullet.BulletAppState;
@@ -14,14 +14,12 @@ import com.jme3.scene.Spatial;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
 
-import io.rjuelich.learn.jmonkey.asteroid.Asteroid;
-
-public class HelloAsteroid extends SimpleApplication {
+public class Main extends SimpleApplication {
 
 	private static final String ACTION_FIRE = "fire";
 
 	public static void main(final String[] args) {
-		new HelloAsteroid().start();
+		new Main().start();
 	}
 
 	private boolean alreadyPressed = false;
