@@ -6,10 +6,14 @@ import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.DirectionalLight;
+import com.jme3.material.MatParam;
+import com.jme3.math.ColorRGBA;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.post.filters.BloomFilter;
+import com.jme3.scene.Geometry;
+import com.jme3.scene.SceneGraphVisitorAdapter;
 import com.jme3.scene.Spatial;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
@@ -48,8 +52,20 @@ public class Main extends SimpleApplication {
 		fpp.addFilter(filter);
 		getViewPort().addProcessor(fpp);
 
-		
-		getRootNode().attachChild(getAssetManager().loadModel("Models/raider/prototype.blend"));
+		final Spatial model = getAssetManager().loadModel("Models/raider/prototype.blend");
+		getRootNode().attachChild(model);
+		getRootNode().depthFirstTraversal(new SceneGraphVisitorAdapter() {
+			@Override
+			public void visit(final Geometry geom) {
+				if (geom.getMaterial() != null && geom.getMaterial().getName() != null
+						&& geom.getMaterial().getName().contains("ThrusterPlasma")) {
+					MatParam param = geom.getMaterial().getParam("Color");
+					ColorRGBA color = (ColorRGBA) param.getValue();
+					geom.getMaterial().setColor("GlowColor", color);
+				}
+			}
+		});
+
 	}
 
 	private final ActionListener fireLaser = new ActionListener() {
@@ -57,10 +73,11 @@ public class Main extends SimpleApplication {
 		@Override
 		public void onAction(final String name, final boolean isPressed, final float tpf) {
 			if (isPressed && !alreadyPressed) {
-				final Vector3f location = getCamera().getLocation().add(0,1,0);
+				final Vector3f location = getCamera().getLocation().add(0, 1, 0);
 				final Quaternion rotation = getCamera().getRotation();
 				final Vector3f direction = getCamera().getDirection();
-				new Beam(getAssetManager(), getRootNode(), location, rotation, direction, bulletAppState.getPhysicsSpace());
+				new Beam(getAssetManager(), getRootNode(), location, rotation, direction,
+						bulletAppState.getPhysicsSpace());
 			}
 
 		}

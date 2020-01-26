@@ -9,7 +9,7 @@ A small lasershooter game as playground to explore possibilities of 3D in Java w
 * collission detection with bulletphysics
 
 
-![](img/preview.png)
+![](img/preview-ship.png)
 ## External Ressources
 ### Meshes
 * created with https://www.blender.org
