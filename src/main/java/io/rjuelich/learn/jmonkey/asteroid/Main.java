@@ -37,7 +37,7 @@ public class Main extends SimpleApplication {
 
 		getRootNode().addLight(new DirectionalLight(new Vector3f(-1, -1, -.5f)));
 
-		new Asteroid(getAssetManager(), getRootNode(), bulletAppState.getPhysicsSpace());
+//		new Asteroid(getAssetManager(), getRootNode(), bulletAppState.getPhysicsSpace());
 
 		getInputManager().addMapping(ACTION_FIRE, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
 		getInputManager().addListener(registerPressedButton, ACTION_FIRE);
@@ -48,6 +48,8 @@ public class Main extends SimpleApplication {
 		fpp.addFilter(filter);
 		getViewPort().addProcessor(fpp);
 
+		
+		getRootNode().attachChild(getAssetManager().loadModel("Models/raider/prototype.blend"));
 	}
 
 	private final ActionListener fireLaser = new ActionListener() {
