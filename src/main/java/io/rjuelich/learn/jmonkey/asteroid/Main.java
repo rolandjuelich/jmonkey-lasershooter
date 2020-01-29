@@ -18,6 +18,8 @@ import com.jme3.scene.Spatial;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
 
+import io.rjuelich.learn.jmonkey.vessel.Interceptor;
+
 public class Main extends SimpleApplication {
 
 	private static final String ACTION_FIRE = "fire";
@@ -52,19 +54,7 @@ public class Main extends SimpleApplication {
 		fpp.addFilter(filter);
 		getViewPort().addProcessor(fpp);
 
-		final Spatial model = getAssetManager().loadModel("Models/raider/prototype.blend");
-		getRootNode().attachChild(model);
-		getRootNode().depthFirstTraversal(new SceneGraphVisitorAdapter() {
-			@Override
-			public void visit(final Geometry geom) {
-				if (geom.getMaterial() != null && geom.getMaterial().getName() != null
-						&& geom.getMaterial().getName().contains("ThrusterPlasma")) {
-					MatParam param = geom.getMaterial().getParam("Color");
-					ColorRGBA color = (ColorRGBA) param.getValue();
-					geom.getMaterial().setColor("GlowColor", color);
-				}
-			}
-		});
+		new Interceptor(getAssetManager(), getRootNode());
 
 	}
 
