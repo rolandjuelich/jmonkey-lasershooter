@@ -1,5 +1,7 @@
 package io.rjuelich.learn.jmonkey.vessel;
 
+import static com.jme3.math.Vector3f.UNIT_Z;
+
 import com.jme3.asset.AssetManager;
 import com.jme3.material.MatParam;
 import com.jme3.math.ColorRGBA;
@@ -25,45 +27,51 @@ public class Interceptor {
 		loadModel(node);
 		node.addControl(control);
 		rootNode.attachChild(node);
-		
 	}
 
-
-	public void forward() {
-		node.move(0,0,1);
+	public void moveForward() {
+		node.move(node.getWorldRotation().mult(UNIT_Z).mult(.1f));
 	}
-	
-	public void turnUp() {
+
+	public void pitchUp() {
 		node.rotate(new Quaternion().fromAngleAxis(-ROTATION_DEGREE, Vector3f.UNIT_X));
 	}
 
-	public void turnDown() {
+	public void pitchDown() {
 		node.rotate(new Quaternion().fromAngleAxis(ROTATION_DEGREE, Vector3f.UNIT_X));
 	}
-	
-	public void turnRight() {
+
+	public void yawRight() {
 		node.rotate(new Quaternion().fromAngleAxis(-ROTATION_DEGREE, Vector3f.UNIT_Y));
+	}
+
+	public void yawLeft() {
+		node.rotate(new Quaternion().fromAngleAxis(ROTATION_DEGREE, Vector3f.UNIT_Y));
+	}
+
+	public void rollLeft() {
+		node.rotate(new Quaternion().fromAngleAxis(-ROTATION_DEGREE, Vector3f.UNIT_Z));
+	}
+
+	public void rollRight() {
+		node.rotate(new Quaternion().fromAngleAxis(ROTATION_DEGREE, Vector3f.UNIT_Z));
 	}
 
 	public void turnRightTo(float newAngle) {
 		Quaternion Yroll45 = new Quaternion();
 		Yroll45.fromAngleAxis(45 * FastMath.DEG_TO_RAD, Vector3f.UNIT_Y);
-		
+
 		Quaternion localRotation = node.getLocalRotation();
-		
+
 		Quaternion quat = new Quaternion();
-		quat.slerp(localRotation,Yroll45, .1f);
-		
+		quat.slerp(localRotation, Yroll45, .1f);
+
 		node.setLocalRotation(quat);
 	}
-	
-	public void turnLeft() {
-		node.rotate(new Quaternion().fromAngleAxis(ROTATION_DEGREE, Vector3f.UNIT_Y));
-	}
-	
+
 	UpdateControl control = new UpdateControl() {
 		public void update(float tpf) {
-			
+			// reset rotation around z axis if not aligned
 		};
 	};
 
@@ -82,7 +90,5 @@ public class Interceptor {
 			}
 		});
 	}
-
-
 
 }
