@@ -2,25 +2,29 @@ package io.rjuelich.learn.jmonkey.asteroid;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.bullet.BulletAppState;
+import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.DirectionalLight;
-import com.jme3.material.MatParam;
-import com.jme3.math.ColorRGBA;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.post.filters.BloomFilter;
-import com.jme3.scene.Geometry;
-import com.jme3.scene.SceneGraphVisitorAdapter;
 import com.jme3.scene.Spatial;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
 
+import io.rjuelich.learn.jmonkey.vessel.Interceptor;
+
 public class Main extends SimpleApplication {
 
 	private static final String ACTION_FIRE = "fire";
+	private static final String EVASIVE = "evasive";
+	private static final String ATTACK = "attack";
+	private static final String ACCELERATE = "accelerate";
+	private static final String DECELERATE = "decelerate";
 
 	public static void main(final String[] args) {
 		new Main().start();
@@ -28,6 +32,8 @@ public class Main extends SimpleApplication {
 
 	private boolean alreadyPressed = false;
 	private BulletAppState bulletAppState;
+
+	private Interceptor vessel;
 
 	@Override
 	public void simpleInitApp() {
@@ -41,32 +47,69 @@ public class Main extends SimpleApplication {
 
 		getRootNode().addLight(new DirectionalLight(new Vector3f(-1, -1, -.5f)));
 
-//		new Asteroid(getAssetManager(), getRootNode(), bulletAppState.getPhysicsSpace());
+		vessel = new Interceptor(getAssetManager(), getRootNode());
 
 		getInputManager().addMapping(ACTION_FIRE, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
 		getInputManager().addListener(registerPressedButton, ACTION_FIRE);
 		getInputManager().addListener(fireLaser, ACTION_FIRE);
+
+		getInputManager().addMapping(EVASIVE, new KeyTrigger(KeyInput.KEY_SPACE));
+		getInputManager().addListener(evasive, EVASIVE);
+
+		getInputManager().addMapping(ATTACK, new KeyTrigger(KeyInput.KEY_LSHIFT));
+		getInputManager().addListener(attack, ATTACK);
+
+		getInputManager().addMapping(ACCELERATE, new KeyTrigger(KeyInput.KEY_1));
+		getInputManager().addListener(accelerate, ACCELERATE);
+
+		getInputManager().addMapping(DECELERATE, new KeyTrigger(KeyInput.KEY_2));
+		getInputManager().addListener(decelerate, DECELERATE);
 
 		final FilterPostProcessor fpp = new FilterPostProcessor(getAssetManager());
 		final BloomFilter filter = new BloomFilter(BloomFilter.GlowMode.Objects);
 		fpp.addFilter(filter);
 		getViewPort().addProcessor(fpp);
 
-		final Spatial model = getAssetManager().loadModel("Models/raider/prototype.blend");
-		getRootNode().attachChild(model);
-		getRootNode().depthFirstTraversal(new SceneGraphVisitorAdapter() {
-			@Override
-			public void visit(final Geometry geom) {
-				if (geom.getMaterial() != null && geom.getMaterial().getName() != null
-						&& geom.getMaterial().getName().contains("ThrusterPlasma")) {
-					MatParam param = geom.getMaterial().getParam("Color");
-					ColorRGBA color = (ColorRGBA) param.getValue();
-					geom.getMaterial().setColor("GlowColor", color);
-				}
-			}
-		});
-
 	}
+
+	private final ActionListener decelerate = new ActionListener() {
+
+		@Override
+		public void onAction(String name, boolean isPressed, float tpf) {
+			if (isPressed) {
+				vessel.decelerate();
+			}
+		}
+	};
+	private final ActionListener accelerate = new ActionListener() {
+
+		@Override
+		public void onAction(String name, boolean isPressed, float tpf) {
+			if (isPressed) {
+				vessel.accelerate();
+			}
+		}
+	};
+
+	private final ActionListener evasive = new ActionListener() {
+
+		@Override
+		public void onAction(String name, boolean isPressed, float tpf) {
+			if (isPressed) {
+				vessel.alterCourseRandomly();
+			}
+		}
+	};
+
+	private final ActionListener attack = new ActionListener() {
+
+		@Override
+		public void onAction(String name, boolean isPressed, float tpf) {
+			if (isPressed) {
+				vessel.setCourseTo(cam.getLocation());
+			}
+		}
+	};
 
 	private final ActionListener fireLaser = new ActionListener() {
 
