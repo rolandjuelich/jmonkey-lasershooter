@@ -5,6 +5,7 @@ import static com.jme3.math.Vector3f.UNIT_Y;
 import static com.jme3.math.Vector3f.UNIT_Z;
 
 import com.jme3.asset.AssetManager;
+import com.jme3.bullet.PhysicsSpace;
 import com.jme3.material.MatParam;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Quaternion;
@@ -18,16 +19,22 @@ import com.jme3.scene.control.UpdateControl;
 public class Interceptor {
 
 	private static final float ROTATION_DEGREE = .01f;
+
 	private final AssetManager assets;
 	private final Node node;
+	private final PhysicsSpace physics;
+	private Vector3f destination = Vector3f.ZERO;
+	private Shield shield;
 
 	private int speed = 0;
 
-	public Interceptor(final AssetManager assetManager, final Node rootNode) {
+	public Interceptor(final AssetManager assetManager, final Node rootNode, final PhysicsSpace physicsSpace) {
 		this.assets = assetManager;
+		this.physics = physicsSpace;
 		this.node = new Node();
 
 		loadModel(node);
+
 		node.addControl(navigationControl);
 		node.addControl(speedControl);
 		rootNode.attachChild(node);
@@ -35,10 +42,10 @@ public class Interceptor {
 
 	UpdateControl navigationControl = new UpdateControl() {
 		public void update(final float tpf) {
-			Quaternion currentRotation = node.getWorldRotation();
-			Quaternion targetRotation = node.getLocalRotation()
+			final Quaternion currentRotation = node.getWorldRotation();
+			final Quaternion targetRotation = node.getLocalRotation()
 					.lookAt(node.getLocalTranslation().negate().add(destination), UNIT_Y);
-			Quaternion newRotation = new Quaternion().slerp(currentRotation, targetRotation, tpf);
+			final Quaternion newRotation = new Quaternion().slerp(currentRotation, targetRotation, tpf);
 			node.setLocalRotation(newRotation);
 		};
 	};
@@ -48,8 +55,6 @@ public class Interceptor {
 			moveForward();
 		};
 	};
-
-	private Vector3f destination = Vector3f.ZERO;
 
 	protected void moveForward() {
 		node.move(viewDirection().mult(speed).mult(.01f));
@@ -98,6 +103,13 @@ public class Interceptor {
 					final MatParam param = geom.getMaterial().getParam("Color");
 					final ColorRGBA color = (ColorRGBA) param.getValue();
 					geom.getMaterial().setColor("GlowColor", color);
+				}
+			}
+
+			@Override
+			public void visit(final Node node) {
+				if (node != null && node.getName() != null && node.getName().toLowerCase().contains("shield")) {
+					shield = new Shield(node, physics);
 				}
 			}
 		});

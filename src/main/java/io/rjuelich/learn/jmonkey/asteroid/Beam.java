@@ -17,6 +17,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue.Bucket;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.LightNode;
 import com.jme3.scene.Node;
 import com.jme3.scene.SceneGraphVisitorAdapter;
 import com.jme3.scene.Spatial;
@@ -39,6 +40,7 @@ public class Beam {
 	private final AudioNode sound;
 	private final Light light;
 	private final GhostControl physicsControl;
+	private final Node node;
 
 	public Beam(final AssetManager assetManager, final Node rootNode, final Vector3f location,
 			final Quaternion rotation, final Vector3f direction, final PhysicsSpace physicsSpace) {
@@ -46,33 +48,37 @@ public class Beam {
 		this.direction = direction;
 		this.physicsSpace = physicsSpace;
 		this.duration = TTL_MIN;
+		this.node = new Node();
+		this.node.setLocalTranslation(location);
 
 		this.physicsControl = new GhostControl(new SimplexCollisionShape(Vector3f.ZERO));
 		this.physicsSpace.add(physicsControl);
 
 		this.model = createModel(assetManager, location, rotation, physicsControl);
+		this.node.attachChild(model);
+
 		this.sound = createSound(assetManager);
-		this.light = createLight(rootNode);
-
-		this.rootNode.attachChild(model);
-		this.rootNode.attachChild(sound);
-		this.rootNode.addLight(light);
-		this.rootNode.addControl(new LightControl(light));
-		this.rootNode.addControl(new BeamControl());
-
-		this.physicsSpace.addCollisionListener(new PhysicsCollisionListener() {
-
-			@Override
-			public void collision(final PhysicsCollisionEvent event) {
-				terminate();
-			}
-		});
 		this.sound.addControl(new UpdateControl() {
 			@Override
 			public void update(final float tpf) {
 				if (duration == TTL_MIN + 1) {
 					sound.playInstance();
 				}
+			}
+		});
+		this.node.attachChild(sound);
+
+		this.light = createLight(rootNode);
+		this.node.attachChild(new LightNode("beamLight", new LightControl(light)));
+		this.node.addControl(new BeamControl());
+
+		this.rootNode.attachChild(node);
+
+		this.physicsSpace.addCollisionListener(new PhysicsCollisionListener() {
+
+			@Override
+			public void collision(final PhysicsCollisionEvent event) {
+				terminate();
 			}
 		});
 	}
@@ -94,20 +100,22 @@ public class Beam {
 	}
 
 	public void move() {
-		model.move(direction);
+		node.move(direction.mult(5));
 	}
 
 	public void terminate() {
 		rootNode.removeLight(light);
-		rootNode.detachChild(model);
-		rootNode.detachChild(sound);
+		node.detachChild(model);
+		node.detachChild(sound);
 		physicsSpace.remove(physicsControl);
+		node.removeFromParent();
 	}
 
-	private static Light createLight(final Node rootNode) {
+	private static Light createLight(final Node root) {
 		final PointLight light = new PointLight();
 		light.setColor(ColorRGBA.Red);
 		light.setRadius(3);
+		root.addLight(light);
 		return light;
 	}
 
@@ -132,7 +140,6 @@ public class Beam {
 				geom.setQueueBucket(Bucket.Transparent);
 			}
 		});
-		model.setLocalTranslation(location);
 		model.setLocalRotation(rotation);
 		model.addControl(physicsControl);
 		return model;

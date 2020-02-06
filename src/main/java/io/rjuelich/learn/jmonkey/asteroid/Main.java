@@ -38,7 +38,10 @@ public class Main extends SimpleApplication {
 	@Override
 	public void simpleInitApp() {
 		bulletAppState = new BulletAppState();
+		bulletAppState.setDebugEnabled(false);
+		
 		stateManager.attach(bulletAppState);
+		
 
 		final Texture stars = getAssetManager().loadTexture("Scenes/starfield.png");
 		final Texture planet = getAssetManager().loadTexture("Scenes/starfield-red-planet.png");
@@ -47,7 +50,7 @@ public class Main extends SimpleApplication {
 
 		getRootNode().addLight(new DirectionalLight(new Vector3f(-1, -1, -.5f)));
 
-		vessel = new Interceptor(getAssetManager(), getRootNode());
+		vessel = new Interceptor(getAssetManager(), getRootNode(), bulletAppState.getPhysicsSpace());
 
 		getInputManager().addMapping(ACTION_FIRE, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
 		getInputManager().addListener(registerPressedButton, ACTION_FIRE);
@@ -95,7 +98,7 @@ public class Main extends SimpleApplication {
 
 		@Override
 		public void onAction(String name, boolean isPressed, float tpf) {
-			if (isPressed) {
+			if (isPressed) {		
 				vessel.alterCourseRandomly();
 			}
 		}
